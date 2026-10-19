@@ -50,3 +50,30 @@ let hoursBySubject ss =
 // 2. Полезные минуты сессии и доля полезного времени по предметам
 let usefulMinutes (s: Session) =
     (float s.Minutes * float s.Productivity) / 5.0
+
+let usefulBySubject ss =
+    ss
+    |> List.groupBy (fun s -> s.Subject)
+    |> List.map (fun (subj, lst) ->
+        let totalMins = float (lst |> List.sumBy (fun s -> s.Minutes))
+        let totalUseful = lst |> List.sumBy usefulMinutes
+        let share = if totalMins > 0.0 then (totalUseful / totalMins) * 100.0 else 0.0
+        (subj, share))
+
+let focusByPlace ss =
+    ss
+    |> List.groupBy (fun s -> s.Place)
+    |> List.map (fun (place, lst) ->
+        let avgProd = lst |> List.averageBy (fun s -> float s.Productivity)
+        (place, avgProd))
+    |> List.sortByDescending (fun (_, avg) -> avg)
+
+let distractionsPerHour ss =
+    let totalMins = float (ss |> List.sumBy (fun s -> s.Minutes))
+    let totalDistr = float (ss |> List.sumBy (fun s -> s.Distractions))
+    if totalMins > 0.0 then (totalDistr / totalMins) * 60.0 else 0.0
+
+let distractionsByPlace ss =
+    ss
+    |> List.groupBy (fun s -> s.Place)
+    |> List.map (fun (place, lst) -> (place, distractionsPerHour lst))
