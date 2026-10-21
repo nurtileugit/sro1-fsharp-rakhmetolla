@@ -77,3 +77,23 @@ let distractionsByPlace ss =
     ss
     |> List.groupBy (fun s -> s.Place)
     |> List.map (fun (place, lst) -> (place, distractionsPerHour lst))
+
+let partOfDay (s: Session) =
+    let hour = int (s.StartTime.Substring(0, 2))
+    if hour < 12 then "Утро"
+    elif hour < 18 then "День"
+    else "Вечер"
+
+let focusByPartOfDay ss =
+    ss
+    |> List.groupBy partOfDay
+    |> List.map (fun (part, lst) ->
+        let avgProd = lst |> List.averageBy (fun s -> float s.Productivity)
+        (part, avgProd))
+
+// 6. Самый учебный день (дата, суммарные минуты)
+let busiestDay ss =
+    ss
+    |> List.groupBy (fun s -> s.Date)
+    |> List.map (fun (date, lst) -> (date, lst |> List.sumBy (fun s -> s.Minutes)))
+    |> List.maxBy (fun (_, mins) -> mins)
