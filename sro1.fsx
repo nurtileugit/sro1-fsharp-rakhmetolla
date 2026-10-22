@@ -47,7 +47,6 @@ let hoursBySubject ss =
     |> List.map (fun (subj, lst) -> (subj, (float (lst |> List.sumBy (fun s -> s.Minutes))) / 60.0))
     |> List.sortByDescending (fun (_, hours) -> hours)
 
-// 2. Полезные минуты сессии и доля полезного времени по предметам
 let usefulMinutes (s: Session) =
     (float s.Minutes * float s.Productivity) / 5.0
 
@@ -91,9 +90,41 @@ let focusByPartOfDay ss =
         let avgProd = lst |> List.averageBy (fun s -> float s.Productivity)
         (part, avgProd))
 
-// 6. Самый учебный день (дата, суммарные минуты)
 let busiestDay ss =
     ss
     |> List.groupBy (fun s -> s.Date)
     |> List.map (fun (date, lst) -> (date, lst |> List.sumBy (fun s -> s.Minutes)))
     |> List.maxBy (fun (_, mins) -> mins)
+
+let distractionsBySubject ss =
+    ss
+    |> List.groupBy (fun s -> s.Subject)
+    |> List.map (fun (subj, lst) -> (subj, lst |> List.sumBy (fun s -> s.Distractions)))
+    |> List.sortByDescending (fun (_, distr) -> distr)
+
+let printReport ss =
+    let totalSessions = List.length ss
+    let totalHours = (float (ss |> List.sumBy (fun s -> s.Minutes))) / 60.0
+    
+    printfn "=== Учебное время ==="
+    printfn "Сессий: %d, всего: %.1f ч" totalSessions totalHours
+    
+    printfn "Часы по предметам:"
+    ss |> hoursBySubject |> List.iter (fun (subj, h) -> printfn "  %s: %.1f ч" subj h)
+    
+    printfn "Полезное время (доля в %%):"
+    ss |> usefulBySubject |> List.iter (fun (subj, share) -> printfn "  %s: %.0f%%" subj share)
+    
+    printfn "Средняя продуктивность по местам:"
+    ss |> focusByPlace |> List.iter (fun (place, prod) -> printfn "  %s: %.1f" place prod)
+    
+    printfn "Отвлечений в час:"
+    ss |> distractionsByPlace |> List.iter (fun (place, dist) -> printfn "  %s: %.1f" place dist)
+    
+    printfn "Продуктивность по времени суток:"
+    ss |> focusByPartOfDay |> List.iter (fun (part, prod) -> printfn "  %s: %.1f" part prod)
+    
+    let (bDate, bMins) = busiestDay ss
+    printfn "Самый учебный день: %s (%d мин)" (showDate bDate) bMins
+
+printReport sessions
